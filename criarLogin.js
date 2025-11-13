@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             // ERRO! Mesmo email ja cadastrado.
             console.error('Erro ao enviar dados:', error);
-            alert('E-mail já cadastrado tente outro');
+            alert(error.message); 
         });
     });
 });
