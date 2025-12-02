@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const cpf = document.getElementById('cpf').value;
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        const nome = document.getElementById('nome').value;
+
 
         function validarCPF(cpf) {
         // Remove caracteres não numéricos
@@ -28,12 +30,13 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('CPF inválido. Por favor, verifique o número digitado.');
             return; // Impede o envio do formulário
         }
-        
+     
         // Cria o objeto JavaScript
         const dadosUsuario = {
             cpf: cpf,
             email: email,
-            senha: password // Deve ser 'senha' para corresponder a Usuario.java
+            senha: password,
+            nome: nome
         };
 
         // Define a URL do Endpoint no Spring Boot
