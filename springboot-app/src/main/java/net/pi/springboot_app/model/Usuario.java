@@ -18,6 +18,7 @@ public class Usuario {
     private String email;
     private String senha; 
     private String nome;
+    private String cpf;
 
     // Construtor vazio (obrigatório pelo JPA)
     public Usuario() {}
