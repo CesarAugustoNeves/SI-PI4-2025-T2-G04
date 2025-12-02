@@ -66,15 +66,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json(); 
         })
         .then(data => {
-            // SUCESSO! O usuário salvo no db.
             console.log('Usuário cadastrado com sucesso! ID:', data.id);
             alert('Cadastro realizado com sucesso! Pode fazer o login.');
             form.reset();
         })
         .catch(error => {
-            // ERRO! Mesmo email ja cadastrado.
+            // CORREÇÃO AQUI:
             console.error('Erro ao enviar dados:', error);
-            alert('E-mail já cadastrado tente outro');
+            // Mostra a mensagem real do erro (ex: "Falha no cadastro..." ou "E-mail já cadastrado")
+            alert(error.message); 
         });
     });
 });
