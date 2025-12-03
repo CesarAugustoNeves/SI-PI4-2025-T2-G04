@@ -212,6 +212,21 @@
                 alert('Seu carrinho está vazio. Adicione produtos antes de finalizar a compra.');
                 return;
             }
+             //. Calcular o total do carrinho
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            //. Criar objeto com dados do pedido
+            const orderData = {
+                cart: cart, // Todos os itens do carrinho
+                total: total, // Valor total
+                orderId: '#' + Date.now(), // ID único baseado no timestamp
+                date: new Date().toLocaleString('pt-BR') // Data atual
+            };
+            //Salvar no localStorage
+            localStorage.setItem('currentOrder', JSON.stringify(orderData));
+            
+            //Redirecionar para a tela de pagamento
+            window.location.href = 'telaPagamento.html';
             
             // Redirecionar para a tela de pagamento
             window.location.href = 'telaPagamento.html';
