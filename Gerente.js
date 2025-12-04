@@ -13,8 +13,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ============================================
-    // RESTO DO CÓDIGO EXISTENTE...
+    // CONFIGURAÇÕES DA API
     // ============================================
+    const API_BASE = 'http://localhost:8081/api';
+    const PRODUCTS_URL = `${API_BASE}/produtos`;
+    const USERS_URL = `${API_BASE}/usuarios`;
+    const SALES_URL = `${API_BASE}/vendas`;
     
     // Elementos da interface
     const tabs = document.querySelectorAll('.tab');
@@ -22,18 +26,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const productForm = document.getElementById('productForm');
     const logoutBtn = document.getElementById('logoutBtn');
     const exportBtn = document.getElementById('exportBtn');
-
-    // URLs da API
-    const API_BASE = 'http://localhost:8081/api';
-    const PRODUCTS_URL = `${API_BASE}/produtos`;
-    const SALES_URL = `${API_BASE}/vendas`;
-    const DASHBOARD_URL = `${API_BASE}/dashboard`;
+    
+    // Variáveis para armazenar dados
+    let produtos = [];
+    let usuarios = [];
+    let vendas = [];
 
     // Inicialização
     initTabs();
-    loadDashboardData();
-    loadProducts();
-    loadSales();
+    loadAllData();
     setupEventListeners();
 
     // Sistema de abas
@@ -79,29 +80,80 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Carregar dados do dashboard
-    async function loadDashboardData() {
+    // Carregar todos os dados
+    async function loadAllData() {
         try {
-            const response = await fetch(DASHBOARD_URL);
-            if (!response.ok) throw new Error('Erro ao carregar dashboard');
+            // Carregar produtos
+            const produtosResponse = await fetch(PRODUCTS_URL);
+            if (produtosResponse.ok) {
+                produtos = await produtosResponse.json();
+            }
             
-            const data = await response.json();
-            updateDashboardCards(data);
+            // Carregar usuários
+            const usuariosResponse = await fetch(USERS_URL);
+            if (usuariosResponse.ok) {
+                usuarios = await usuariosResponse.json();
+            }
+            
+            // Carregar vendas
+            const vendasResponse = await fetch(SALES_URL);
+            if (vendasResponse.ok) {
+                vendas = await vendasResponse.json();
+            }
+            
+            // Atualizar dashboard com dados reais
+            updateDashboardWithRealData();
+            
+            // Renderizar tabelas iniciais
+            renderProductsTable(produtos);
+            renderSalesTable(vendas);
+            
         } catch (error) {
-            console.error('Erro ao carregar dados do dashboard:', error);
-            // Usar dados mockados em caso de erro
-            updateDashboardCards(getMockDashboardData());
+            console.error('Erro ao carregar dados:', error);
+            updateDashboardWithMockData();
         }
     }
 
+    // Atualizar dashboard com dados reais
+    function updateDashboardWithRealData() {
+        // 1. Calcular total de vendas
+        const totalVendas = vendas.reduce((total, venda) => {
+            return total + (venda.valorTotal || 0);
+        }, 0);
+        
+        // 2. Calcular total de produtos em estoque
+        const totalEstoque = produtos.reduce((total, produto) => {
+            return total + (produto.estoque || 0);
+        }, 0);
+        
+        // 3. Contar usuários (clientes ativos)
+        const totalClientes = usuarios.length;
+        
+        // Atualizar os cards
+        updateDashboardCards(totalVendas, totalEstoque, totalClientes);
+    }
+
+    // Atualizar dashboard com dados mockados (fallback)
+    function updateDashboardWithMockData() {
+        const mockVendas = 1245.80;
+        const mockEstoque = 1248;
+        const mockClientes = 342;
+        
+        updateDashboardCards(mockVendas, mockEstoque, mockClientes);
+    }
+
     // Atualizar cards do dashboard
-    function updateDashboardCards(data) {
+    function updateDashboardCards(vendasTotal, produtosEstoque, clientesAtivos) {
         const cards = document.querySelectorAll('.dashboard-card p');
-        if (cards.length >= 4) {
-            cards[0].textContent = `R$ ${data.vendasHoje.toFixed(2)}`;
-            cards[1].textContent = data.produtosEstoque.toLocaleString('pt-BR');
-            cards[2].textContent = data.clientesAtivos.toLocaleString('pt-BR');
-            cards[3].textContent = `R$ ${data.vendasMes.toFixed(2)}`;
+        if (cards.length >= 3) {
+            // Card 1: Vendas (Total Geral)
+            cards[0].textContent = `R$ ${vendasTotal.toFixed(2)}`;
+            
+            // Card 2: Produtos em Estoque
+            cards[1].textContent = produtosEstoque.toLocaleString('pt-BR');
+            
+            // Card 3: Clientes Ativos
+            cards[2].textContent = clientesAtivos.toLocaleString('pt-BR');
         }
     }
 
@@ -111,12 +163,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(PRODUCTS_URL);
             if (!response.ok) throw new Error('Erro ao carregar produtos');
             
-            const produtos = await response.json();
+            produtos = await response.json();
             renderProductsTable(produtos);
         } catch (error) {
             console.error('Erro ao carregar produtos:', error);
-            // Fallback para dados mockados
-            renderProductsTable(getMockProducts());
+            renderProductsTable(produtos);
         }
     }
 
@@ -126,12 +177,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(SALES_URL);
             if (!response.ok) throw new Error('Erro ao carregar vendas');
             
-            const vendas = await response.json();
+            vendas = await response.json();
             renderSalesTable(vendas);
         } catch (error) {
             console.error('Erro ao carregar vendas:', error);
-            // Fallback para dados mockados
-            renderSalesTable(getMockSales());
+            renderSalesTable(vendas);
         }
     }
 
@@ -156,10 +206,10 @@ document.addEventListener('DOMContentLoaded', function() {
         produtos.forEach(produto => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${produto.nome}</td>
-                <td>${produto.codigo}</td>
-                <td>R$ ${typeof produto.preco === 'number' ? produto.preco.toFixed(2) : '0.00'}</td>
-                <td>${produto.estoque}</td>
+                <td>${produto.nome || 'Sem nome'}</td>
+                <td>${produto.codigo || 'Sem código'}</td>
+                <td>R$ ${produto.preco ? produto.preco.toFixed(2) : '0.00'}</td>
+                <td>${produto.estoque || 0}</td>
                 <td>
                     <button class="btn-edit" onclick="editProduct(${produto.id})">
                         <i class="fas fa-edit"></i>
@@ -194,10 +244,10 @@ document.addEventListener('DOMContentLoaded', function() {
         vendas.forEach(venda => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${venda.cliente || 'Cliente não identificado'}</td>
-                <td>${venda.email || 'N/A'}</td>
-                <td>${formatDate(venda.dataVenda)}</td>
-                <td>R$ ${typeof venda.valorTotal === 'number' ? venda.valorTotal.toFixed(2) : '0.00'}</td>
+                <td>${venda.clienteNome || venda.cliente || venda.usuarioNome || 'Cliente não identificado'}</td>
+                <td>${venda.clienteEmail || venda.email || venda.usuarioEmail || 'N/A'}</td>
+                <td>${formatDate(venda.dataVenda || venda.data || venda.dataCompra)}</td>
+                <td>R$ ${venda.valorTotal ? venda.valorTotal.toFixed(2) : '0.00'}</td>
                 <td>
                     <button class="btn-details" onclick="viewSaleDetails(${venda.id})">
                         <i class="fas fa-eye"></i> Ver
@@ -243,10 +293,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const novoProduto = await response.json();
                 alert('Produto cadastrado com sucesso!');
                 productForm.reset();
-                loadProducts(); // Recarrega a lista de produtos
                 
-                // Atualiza o card de produtos em estoque
-                atualizarContadorProdutos();
+                // Atualizar dados
+                produtos.push(novoProduto);
+                renderProductsTable(produtos);
+                updateDashboardWithRealData();
+                
             } else if (response.status === 409) {
                 alert('Já existe um produto com este código.');
             } else {
@@ -261,32 +313,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Exportar relatórios
     async function exportarRelatorios() {
         try {
-            const response = await fetch(`${API_BASE}/relatorios/exportar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                alert('Relatórios exportados com sucesso!');
-                // Em uma implementação real, você faria o download do arquivo
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'relatorios_mercado.xlsx';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            } else {
-                throw new Error('Erro ao exportar relatórios');
-            }
+            // Criar dados para exportação
+            const dadosParaExportar = {
+                produtos: produtos,
+                vendas: vendas,
+                usuarios: usuarios,
+                dataExportacao: new Date().toISOString()
+            };
+            
+            // Converter para JSON
+            const jsonString = JSON.stringify(dadosParaExportar, null, 2);
+            
+            // Criar blob e fazer download
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `relatorio_mercado_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            alert('Relatório exportado com sucesso!');
+            
         } catch (error) {
             console.error('Erro:', error);
-            alert('Relatórios exportados com sucesso! (Simulação)');
-            // Em caso de erro, mostra mensagem de sucesso (simulação)
+            alert('Erro ao exportar relatórios. Tente novamente.');
         }
     }
 
@@ -306,108 +359,62 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Atualizar contador de produtos (simulação)
-    function atualizarContadorProdutos() {
-        const produtoEstoqueCard = document.querySelector('.dashboard-card:nth-child(2) p');
-        if (produtoEstoqueCard) {
-            const currentCount = parseInt(produtoEstoqueCard.textContent.replace(/\D/g, '')) || 0;
-            produtoEstoqueCard.textContent = (currentCount + 1).toLocaleString('pt-BR');
-        }
-    }
-
     // Funções auxiliares
     function formatDate(dateString) {
         if (!dateString) return 'Data não disponível';
         
         try {
             const date = new Date(dateString);
-            return date.toLocaleDateString('pt-BR');
+            if (isNaN(date.getTime())) {
+                return 'Data inválida';
+            }
+            return date.toLocaleDateString('pt-BR') + ' ' + 
+                   date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         } catch (error) {
             return 'Data inválida';
         }
-    }
-
-    // Dados mockados para desenvolvimento
-    function getMockDashboardData() {
-        return {
-            vendasHoje: 1245.80,
-            produtosEstoque: 1248,
-            clientesAtivos: 342,
-            vendasMes: 28560.40
-        };
-    }
-
-    function getMockProducts() {
-        return [
-            { id: 1, nome: 'Arroz 5kg', codigo: '123456', preco: 25.90, estoque: 42, categoria: 'alimentos' },
-            { id: 2, nome: 'Feijão 1kg', codigo: '789012', preco: 8.50, estoque: 67, categoria: 'alimentos' },
-            { id: 3, nome: 'Óleo de Soja 900ml', codigo: '345678', preco: 7.80, estoque: 23, categoria: 'alimentos' },
-            { id: 4, nome: 'Café 500g', codigo: '901234', preco: 12.90, estoque: 38, categoria: 'alimentos' },
-            { id: 5, nome: 'Açúcar 1kg', codigo: '567890', preco: 4.20, estoque: 55, categoria: 'alimentos' },
-            { id: 6, nome: 'Leite 1L', codigo: '234567', preco: 4.50, estoque: 30, categoria: 'laticinios' }
-        ];
-    }
-
-    function getMockSales() {
-        return [
-            { 
-                id: 1, 
-                cliente: 'João Silva', 
-                email: 'joao.silva@email.com', 
-                dataVenda: '2024-10-15T10:30:00', 
-                valorTotal: 142.50 
-            },
-            { 
-                id: 2, 
-                cliente: 'Maria Santos', 
-                email: 'maria.santos@email.com', 
-                dataVenda: '2024-10-14T15:45:00', 
-                valorTotal: 89.90 
-            },
-            { 
-                id: 3, 
-                cliente: 'Carlos Oliveira', 
-                email: 'carlos.oliveira@email.com', 
-                dataVenda: '2024-10-13T09:15:00', 
-                valorTotal: 215.30 
-            },
-            { 
-                id: 4, 
-                cliente: 'Ana Costa', 
-                email: 'ana.costa@email.com', 
-                dataVenda: '2024-10-12T16:20:00', 
-                valorTotal: 76.80 
-            }
-        ];
     }
 });
 
 // Funções globais para os botões de ação
 async function editProduct(productId) {
-    // Em uma implementação real, você buscaria os dados do produto
-    // e preencheria um formulário de edição
-    const novoPreco = prompt('Digite o novo preço do produto:');
-    if (novoPreco && !isNaN(novoPreco)) {
-        try {
-            const response = await fetch(`http://localhost:8081/api/produtos/${productId}`, {
+    // Buscar produto atual
+    try {
+        const response = await fetch(`http://localhost:8081/api/produtos/${productId}`);
+        if (!response.ok) throw new Error('Produto não encontrado');
+        
+        const produto = await response.json();
+        
+        // Criar formulário de edição
+        const novoNome = prompt('Digite o novo nome do produto:', produto.nome);
+        const novoPreco = prompt('Digite o novo preço do produto:', produto.preco);
+        const novoEstoque = prompt('Digite a nova quantidade em estoque:', produto.estoque);
+        
+        if (novoNome && novoPreco && novoEstoque) {
+            const dadosAtualizados = {
+                nome: novoNome,
+                preco: parseFloat(novoPreco),
+                estoque: parseInt(novoEstoque)
+            };
+            
+            const updateResponse = await fetch(`http://localhost:8081/api/produtos/${productId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ preco: parseFloat(novoPreco) })
+                body: JSON.stringify(dadosAtualizados)
             });
 
-            if (response.ok) {
+            if (updateResponse.ok) {
                 alert('Produto atualizado com sucesso!');
                 location.reload();
             } else {
                 throw new Error('Erro ao atualizar produto');
             }
-        } catch (error) {
-            console.error('Erro:', error);
-            alert('Produto editado com sucesso! (Simulação)');
-            // Em caso de erro, mostra mensagem de sucesso (simulação)
         }
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao editar produto. Tente novamente.');
     }
 }
 
@@ -426,19 +433,43 @@ async function deleteProduct(productId) {
             }
         } catch (error) {
             console.error('Erro:', error);
-            alert('Produto excluído com sucesso! (Simulação)');
-            // Em caso de erro, mostra mensagem de sucesso (simulação)
-            setTimeout(() => location.reload(), 1000);
+            alert('Erro ao excluir produto. Tente novamente.');
         }
     }
 }
 
 function viewSaleDetails(saleId) {
     // Implementar visualização de detalhes da venda
-    const detalhes = `
+    fetch(`http://localhost:8081/api/vendas/${saleId}`)
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error('Venda não encontrada');
+        })
+        .then(venda => {
+            const detalhes = `
+Detalhes da Venda #${venda.id}
+
+Cliente: ${venda.clienteNome || venda.cliente || 'Não identificado'}
+E-mail: ${venda.clienteEmail || venda.email || 'N/A'}
+Data: ${new Date(venda.dataVenda || venda.data).toLocaleString('pt-BR')}
+Valor Total: R$ ${venda.valorTotal ? venda.valorTotal.toFixed(2) : '0.00'}
+
+Itens da compra:
+${venda.itens && venda.itens.length > 0 ? 
+    venda.itens.map(item => `- ${item.nomeProduto || 'Produto'} - ${item.quantidade}x R$ ${item.precoUnitario || '0.00'}`).join('\n') 
+    : 'Itens não disponíveis'}
+            `;
+            
+            alert(detalhes);
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            
+            // Fallback para dados simulados
+            const detalhesSimulados = `
 Detalhes da Venda #${saleId}
 
-Itens:
+Itens (simulação):
 - Arroz 5kg - 2x R$ 25,90
 - Feijão 1kg - 1x R$ 8,50
 - Óleo 900ml - 1x R$ 7,80
@@ -446,9 +477,10 @@ Itens:
 Total: R$ 68,10
 Forma de pagamento: PIX
 Data: 15/10/2024 10:30
-    `;
-    
-    alert(detalhes);
+            `;
+            
+            alert(detalhesSimulados);
+        });
 }
 
 // Função para atualizar estoque (pode ser chamada de outros lugares)
@@ -476,11 +508,27 @@ async function updateStock(productId, newStock) {
 // Função para buscar estatísticas em tempo real
 async function refreshDashboard() {
     try {
-        const response = await fetch('http://localhost:8081/api/dashboard');
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Dashboard atualizado:', data);
-            // Atualizar a interface com os novos dados
+        const produtosResponse = await fetch('http://localhost:8081/api/produtos');
+        const vendasResponse = await fetch('http://localhost:8081/api/vendas');
+        const usuariosResponse = await fetch('http://localhost:8081/api/usuarios');
+        
+        if (produtosResponse.ok && vendasResponse.ok && usuariosResponse.ok) {
+            const produtos = await produtosResponse.json();
+            const vendas = await vendasResponse.json();
+            const usuarios = await usuariosResponse.json();
+            
+            // Calcular totais
+            const totalVendas = vendas.reduce((total, venda) => total + (venda.valorTotal || 0), 0);
+            const totalEstoque = produtos.reduce((total, produto) => total + (produto.estoque || 0), 0);
+            const totalClientes = usuarios.length;
+            
+            // Atualizar interface
+            const cards = document.querySelectorAll('.dashboard-card p');
+            if (cards.length >= 3) {
+                cards[0].textContent = `R$ ${totalVendas.toFixed(2)}`;
+                cards[1].textContent = totalEstoque.toLocaleString('pt-BR');
+                cards[2].textContent = totalClientes.toLocaleString('pt-BR');
+            }
         }
     } catch (error) {
         console.error('Erro ao atualizar dashboard:', error);
@@ -489,7 +537,5 @@ async function refreshDashboard() {
 
 // Atualizar dashboard a cada 30 segundos (opcional)
 setInterval(() => {
-    if (document.querySelector('.tab.active').getAttribute('data-tab') === 'sales') {
-        refreshDashboard();
-    }
+    refreshDashboard();
 }, 30000);
