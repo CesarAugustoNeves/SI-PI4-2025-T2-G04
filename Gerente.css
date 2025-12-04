@@ -304,3 +304,63 @@
                 width: 100%;
             }
         }
+        .btn-refresh {
+            background-color: var(--primary);
+        }
+        
+        .btn-refresh:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            font-family: inherit;
+            resize: vertical;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        #inventory-table-body td:last-child,
+        #sales-table-body td:last-child {
+            white-space: nowrap;
+        }
+        
+        .btn-details, .btn-edit, .btn-danger {
+            padding: 6px 12px;
+            margin: 2px;
+            font-size: 14px;
+        }
+        
+        .btn-details {
+            background-color: var(--primary);
+        }
+        
+        .btn-edit {
+            background-color: var(--warning);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        
+        .btn-details:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-edit:hover {
+            background-color: #e67e22;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
