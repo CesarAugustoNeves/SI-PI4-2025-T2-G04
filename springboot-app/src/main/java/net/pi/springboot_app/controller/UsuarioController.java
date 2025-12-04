@@ -8,6 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional; 
+// Imports necessários para a criptografia
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -16,6 +20,22 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    // --- MÉTODO AUXILIAR PARA CRIPTOGRAFAR SENHA (SHA-256) ---
+    private String criptografarSenha(String senha) {
+        try {
+            MessageDigest algorithm = MessageDigest.getInstance("SHA-256");
+            byte[] messageDigest = algorithm.digest(senha.getBytes(StandardCharsets.UTF_8));
+            
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : messageDigest) {
+                hexString.append(String.format("%02x", 0xFF & b));
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Erro ao criptografar senha", e);
+        }
+    }
 
     // --- NOVA VALIDAÇÃO DE NOME ---
     private boolean validarNome(String nome) {
@@ -105,6 +125,10 @@ public class UsuarioController {
         }
 
         // SE NÃO EXISTIR: Salva o novo usuário
+        // CRIPTOGRAFIA: Aplica o hash na senha antes de salvar
+        String senhaCriptografada = criptografarSenha(usuario.getSenha());
+        usuario.setSenha(senhaCriptografada);
+
         Usuario novoUsuario = usuarioRepository.save(usuario);
         
         // Retorna o novo usuário com status 201 Created
@@ -116,9 +140,12 @@ public class UsuarioController {
     @PostMapping("/login") 
     public ResponseEntity<Usuario> loginUsuario(@RequestBody Usuario credenciais) {
         
+        // CRIPTOGRAFIA: Criptografa a senha recebida para comparar com o banco
+        String senhaHash = criptografarSenha(credenciais.getSenha());
+
         Optional<Usuario> usuarioEncontrado = usuarioRepository.findByEmailAndSenha(
             credenciais.getEmail(), 
-            credenciais.getSenha()
+            senhaHash // Passa o hash para a busca
         );
 
         if (usuarioEncontrado.isPresent()) {
