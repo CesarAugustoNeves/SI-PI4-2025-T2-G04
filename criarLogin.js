@@ -1,5 +1,6 @@
+ //Feito por: CESAR AUGUSTO NEVES
 document.addEventListener('DOMContentLoaded', function() {
-    //Feito por: CESAR AUGUSTO NEVES
+   
     // Garantir de que o ID do formulário no HTML é 'loginForm'
     const form = document.getElementById('loginForm'); 
 

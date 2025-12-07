@@ -1,3 +1,4 @@
+//FEITO POR: CESAR AUGUSTO NEVES
 package net.pi.springboot_app.repository; // Ajuste para net.pi.springboot_app.Repository se a pasta for maiúscula
 
 import net.pi.springboot_app.model.Usuario; // Importa a Entidade Usuario

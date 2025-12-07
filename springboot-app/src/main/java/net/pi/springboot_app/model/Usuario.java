@@ -1,3 +1,4 @@
+//FEITO POR: CESAR AUGUSTO NEVES
 package net.pi.springboot_app.model; // Ajuste para net.pi.springboot_app.Model se a pasta for maiúscula
 
 import jakarta.persistence.Column;
