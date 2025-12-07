@@ -1,3 +1,5 @@
+//Feiito Por Vitor Eugênio
+
 document.addEventListener('DOMContentLoaded', function() {
     // ============================================
     // VERIFICAÇÃO DE SEGURANÇA - APENAS ADMINISTRADOR
